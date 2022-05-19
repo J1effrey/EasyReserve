@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Home</title>
+    <!--    <link rel="stylesheet" type="text/css" href="../plugins/elementui/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div id="app">
+    <div class="content-header">
+        <h1>Admin</h1>
+    </div>
+    <el-button type="primary" @click="handleCreate()">create<i class="el-icon-ipload el-icon--right"></i></el-button>
+    <div class = "app-container">
+        <div class="box">
+
+        </div>
+        <el-table :data="dataList"
+                  stripe
+                  style="width: 100%"
+                  size="small"
+                  highlight-current-row
+        >
+            <el-table-column type="index" align="center" label="序号"></el-table-column>
+            <el-table-column prop="roomId" label="Room"></el-table-column>
+            <el-table-column prop="uid" label="User"></el-table-column>
+            <el-table-column prop="date" label="Date"></el-table-column>
+            <el-table-column prop="begintime" label="BeginTime"></el-table-column>
+            <el-table-column prop="endtime" label="EndTime"></el-table-column>
+            <el-table-column fixed="right" label="Operation">
+                <template slot-scope="scope">
+                    <el-button @click="approve(scope.row)" size="small">approve</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </div>
+    <div class="add-form">
+
+        <el-dialog title="新增预约" :visible.sync="dialogFormVisible">
+<!--            <el-form ref="dataAddForm" :model="formData" :rules="rules" label-position="right" label-width="90px">-->
+            <el-form ref="dataAddForm" :model="formData" label-position="right" label-width="100px">
+                <!--<el-row>
+                    <el-col :span="12">
+                        <el-form-item label="图书类别" prop="type">
+                            <el-input v-model="formData.type"/>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row>
+                    <el-col :span="12">
+                        <el-form-item label="图书名称" prop="name">
+                            <el-input v-model="formData.name"/>
+                        </el-form-item>
+                    </el-col>
+                </el-row>-->
+                    <el-form-item label="room" prop="roomID">
+                        <el-col :span="11">
+<!--                            <el-input v-model="formData.roomId"/>-->
+                            <el-select v-model="formData.roomId" placeholder="please choose">
+                                <el-option v-for="item in rooms" :key="item.rid" :label="item.rname" :value="item.rid"> </el-option>
+                            </el-select>
+                        </el-col>
+                    </el-form-item>
+                    <el-form-item label="start date">
+                        <el-col :span="11">
+                            <el-date-picker v-model="formData.date" type="date" value-format="yyyy-MM-dd" placeholder="please choose date" style="width: 100%;"></el-date-picker>
+                        </el-col>
+                    </el-form-item>
+                    <el-form-item label="pick time">
+                        <el-col :span="11">
+                            <el-time-select placeholder="start time" v-model="formData.begintime" value-format="HH:mm"  style="width: 100%" :picker-options="{ start: '08:30', step: '00:15', end: '18:30' }"> </el-time-select>
+                        </el-col>
+                        <el-col class="line" :span="2">-</el-col>
+                        <el-col :span="11">
+                            <el-time-select placeholder="finish time" v-model="formData.endtime" style="width: 100%" value-format="HH:mm"  :picker-options="{ start: '08:30', step: '00:15', end: '18:30', minTime: formData.begintime }"> </el-time-select>
+                        </el-col>
+                    </el-form-item>
+            </el-form>
+
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="cancel()">cancel</el-button>
+                <el-button type="primary" @click="handleAdd()">confirm</el-button>
+            </div>
+        </el-dialog>
+
+    </div>
+</div>
+</body>
+<script src="../../static/js/vue.js"></script>
+<!--<script src="../plugins/elementui/index.js"></script>-->
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script type="text/javascript" src="../../static/js/jquery.min.js"></script>
+<script src="../../static/js/axios-0.18.0.js"></script>
+<script>
+    axios.defaults.withCredentials = true;
+    let vue = new Vue({
+        el: '#app',
+        data:{
+            dialogFormVisible: false,
+            dataList: [],
+            formData: {
+                sid: 0
+            },
+            rooms: []
+        },
+        created() {
+            this.getAllReservations();
+            this.getAllRooms();
+        },
+        methods: {
+            getAllReservations() {
+                axios.get("/admin/reservations").then((res) => {
+                    console.log(res);
+                    this.dataList = res.data.obj;
+                })
+            },
+            handleCreate() {
+              this.dialogFormVisible = true;
+              this.resetForm();
+            },
+            resetForm() {
+                this.formData = {
+                    sid: 0
+                };
+
+            },
+            approve(row) {
+                this.$confirm("Do you want to create this reservation?","INFO",{type:"info"}).then(()=>{
+                    // console.log(row);
+                    axios.put("/admin/reservation/" + row.id).then((res) => {
+                        if (res.data.status == 200) {
+                            this.$message.success(res.data.msg);
+                        } else {
+                            this.$message.error(res.data.msg);
+                        }
+                    }).finally(() => {
+                        //2.重新加载数据
+                        this.getAllReservations();
+                    });
+                }).catch(()=>{
+                    this.$message.info("cancel operation");
+                });
+            },
+            cancel() {
+                this.dialogFormVisible = false;
+                this.$message.info("cancel operation");
+            },
+            handleAdd() {
+                console.log("adding..");
+                let formData2 = new FormData();
+                for (let key in this.formData) {
+                    formData2.append(key, this.formData[key]);
+                }
+                axios({
+                    url: "/reservation",
+                    method: 'POST',
+                    data: formData2
+                }).then((res) => {
+                    console.log(res)
+                    if (res.data.status == 200) {
+                        this.$message.success(res.data.msg);
+                    } else {
+                        this.$message.error(res.data.msg);
+                    }
+                })
+
+            },
+            getAllRooms() {
+                axios.get("/rooms").then((res) => {
+                    console.log(res);
+                    this.rooms = res.data.obj;
+                })
+            }
+        }
+    })
+</script>
+</html>

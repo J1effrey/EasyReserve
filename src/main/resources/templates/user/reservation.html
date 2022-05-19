@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Reservation</title>
+    <!--    <link rel="stylesheet" type="text/css" href="../plugins/elementui/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div id="app">
+    <div class="content-header">
+        <h1>My Reservations</h1>
+    </div>
+    <div class = "app-container">
+        <div class="box">
+
+        </div>
+        <el-table :data="dataList"
+                  stripe
+                  style="width: 100%"
+                  size="small"
+                  :row-class-name="tableRowClassName"
+        >
+            <el-table-column type="index" align="center" label="Index"></el-table-column>
+            <el-table-column prop="roomId" label="Room"></el-table-column>
+<!--            <el-table-column prop="uid" label="User"></el-table-column>-->
+            <el-table-column prop="date" label="Date"></el-table-column>
+            <el-table-column prop="begintime" label="BeginTime"></el-table-column>
+            <el-table-column prop="endtime" label="EndTime"></el-table-column>
+            <el-table-column fixed="right" label="Operation">
+                <template slot-scope="scope">
+                    <el-button @click="cancel(scope.row)" size="small">cancel</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </div>
+</div>
+</body>
+<style>
+    .el-table .success-row {
+        background: #f0f9eb;
+    }
+</style>
+<script src="../../static/js/vue.js"></script>
+<!--<script src="../plugins/elementui/index.js"></script>-->
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script type="text/javascript" src="../../static/js/jquery.min.js"></script>
+<script src="../../static/js/axios-0.18.0.js"></script>
+<script>
+    axios.defaults.withCredentials = true;
+    let vue = new Vue({
+        el: '#app',
+        data:{
+            dataList: []
+        },
+        created() {
+            this.getAllReservations();
+        },
+        methods: {
+            tableRowClassName({row, rowIndex}) {
+                console.log(row);
+                if (row.sid == 2) {
+                    return 'success-row';
+                }
+            },
+            getAllReservations() {
+                axios.get("/user/reservations/").then((res) => {
+                    console.log(res);
+                    this.dataList = res.data.obj;
+                })
+            },
+            cancel(row) {
+                this.$confirm("Do you really want cancel this reservations？","INFO",{type:"info"}).then(()=>{
+                    // console.log(row);
+                    axios.put("/user/reservation/" + row.id).then((res) => {
+                        if (res.data.status == 200) {
+                            this.$message.success(res.data.msg);
+                        } else {
+                            this.$message.error(res.data.msg);
+                        }
+                    }).finally(() => {
+                        //2.重新加载数据
+                        this.getAllReservations();
+                    });
+                }).catch(()=>{
+                    this.$message.info("cancel operation");
+                });
+            }
+        }
+    })
+</script>
+</html>

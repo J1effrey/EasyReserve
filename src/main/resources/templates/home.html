@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <!--    <link rel="stylesheet" type="text/css" href="../plugins/elementui/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div id="app">
+    <div class="content-header">
+        <h1>All Reservation</h1>
+        <div>Welcome back：<el-button type="text" @click="" size="small">{{username}}</el-button></div>
+        <el-button type="text" @click="updatePwd" size="small">update password</el-button>
+        <el-button type="text" @click="getMyReservations" size="small">review my reservations</el-button>
+        <el-button type="text" @click="logout" size="small">Log out</el-button>
+    </div>
+    <div class = "app-container">
+        <div class="box">
+
+        </div>
+        <el-table :data="dataList"
+                  stripe
+                  style="width: 100%"
+                  size="small"
+                  highlight-current-row
+        >
+            <el-table-column type="index" align="center" label="Index"></el-table-column>
+            <el-table-column prop="roomId" label="Room"></el-table-column>
+            <el-table-column prop="date" label="Date"></el-table-column>
+            <el-table-column prop="begintime" label="BeginTime"></el-table-column>
+            <el-table-column prop="endtime" label="EndTime"></el-table-column>
+            <el-table-column fixed="right" label="Operation">
+               <template slot-scope="scope">
+                   <el-button @click="reserve(scope.row)" size="small">reserve</el-button>
+               </template>
+            </el-table-column>
+        </el-table>
+    </div>
+</div>
+</body>
+<script src="static/js/vue.js"></script>
+<!--<script src="../plugins/elementui/index.js"></script>-->
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script type="text/javascript" src="static/js/jquery.min.js"></script>
+<script src="static/js/axios-0.18.0.js"></script>
+<script>
+    axios.defaults.withCredentials = true;
+    let vue = new Vue({
+        el: '#app',
+        data:{
+            dataList: [],
+            username: ''
+        },
+        created() {
+            console.log("creating");
+            this.getAllReservations();
+            this.username = sessionStorage.getItem("uname");
+            // console.log(this.username)
+        },
+        methods: {
+            getAllReservations() {
+                axios.get("/reservations").then((res) => {
+                    this.dataList = res.data.obj;
+                })
+            },
+            onSubmit() {
+                console.log('register!');
+                let formData = new FormData();
+                for (let key in this.form) {
+                    formData.append(key, this.form[key]);
+                }
+                console.log(formData);
+                axios({
+                    url: "/register",
+                    method: 'POST',
+                    data: formData
+                }).then((res) => {
+                    console.log(res)
+                })
+            },
+            getMyReservations() {
+                window.location.href="/myReservations"
+            },
+            updatePwd() {
+                window.location.href="/changePwd"
+            },
+            reserve(row) {
+                this.$confirm("Do you want to book this room？","INFO",{type:"info"}).then(()=>{
+                    // console.log(row);
+                    axios.put("/reservation/" + row.id).then((res) => {
+                        if (res.data.status == 200) {
+                            this.$message.success(res.data.msg);
+                        } else {
+                            this.$message.error(res.data.msg);
+                        }
+                    }).finally(() => {
+                        //2.重新加载数据
+                        this.getAllReservations();
+                    });
+                }).catch(()=>{
+                    this.$message.info("cancel operation");
+                });
+            },
+            logout() {
+                axios.get("/logout").then((res) => {
+                    console.log(res);
+                })
+                sessionStorage.clear();
+            }
+        }
+    })
+</script>
+</html>
